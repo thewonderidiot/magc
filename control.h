@@ -9,5 +9,7 @@ uint16_t control_rad(agc_state_t *state);
 uint16_t control_rsc(agc_state_t *state);
 void control_wg(agc_state_t *state, uint16_t wl);
 void control_wsc(agc_state_t *state, uint16_t wl);
+uint16_t control_rch(agc_state_t *state);
+void control_wch(agc_state_t *state, uint16_t wl);
 
 #endif//_CONTROL_H_

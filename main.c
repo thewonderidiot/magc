@@ -13,7 +13,7 @@ int main(int argc, char **argv) {
     agc_init(&agc_state);
     agc_load_rope(&agc_state, argv[1]);
 
-    for (int i = 0; i < 300; i++) {
+    for (int i = 0; i < 400; i++) {
         agc_service(&agc_state);
         printf("A=%06o L=%06o Q=%06o Z=%06o FB=%02o EB=%o\n", agc_state.a, agc_state.l, agc_state.q, agc_state.z,
                agc_state.fb >> 10, agc_state.eb >> 8);

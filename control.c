@@ -98,3 +98,12 @@ void control_wg(agc_state_t *state, uint16_t wl) {
         break;
     }
 }
+
+uint16_t control_rch(agc_state_t *state) {
+    // FIXME
+    return 0;
+}
+
+void control_wch(agc_state_t *state, uint16_t wl) {
+    // FIXME
+}

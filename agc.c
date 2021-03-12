@@ -18,12 +18,13 @@ void agc_service(agc_state_t *state) {
     // INKBT1
     subinst_exec(state);
 
-    if (state->nisql) {
+    if (state->st_pend != 2 && state->nisql) {
         state->nisql = 0;
         state->sq = ((state->b >> 12) & 03) | ((state->b >> 13) & 04);
         state->qc = (state->b >> 10) & 03;
         state->sqr10 = (state->b >> 9) & 01;
         state->sqext = state->futext;
+        state->futext = 0;
     }
 
     state->st = state->st_pend;

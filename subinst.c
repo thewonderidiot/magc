@@ -89,9 +89,9 @@ static void exec_CCS0(agc_state_t *state) {
     state->g |= mem_read(state);
     // 5. RG WB TSGN TMZ TPZG
     state->b = state->g;
-    uint16_t br = (state->g >> 15) & 01;
+    uint16_t br = (state->g >> 14) & 02;
     if ((state->g == 0177777) || (state->g == 0)) {
-        br |= 02;
+        br |= 01;
     }
     // 7. 00 RZ WY12
     // 7. 01 RZ WY12 PONEX
@@ -321,6 +321,72 @@ static void exec_AD0(agc_state_t *state) {
     uint16_t u = control_add(state->b, state->a);
     // 11. RU WA
     state->a = u;
+}
+
+static void exec_MSK0(agc_state_t *state) {
+    // 2. RSC WG
+    state->g = control_rsc(state);
+    // 3. RA WB
+    state->b = state->a;
+    // 4. RC WA
+    state->a = state->b ^ 0177777;
+    // Memory cycle completion
+    state->g |= mem_read(state);
+    // 7. RG WB
+    state->b = state->g;
+    // 8. RZ WS ST2
+    state->s = state->z & 07777;
+    state->st_pend = 2;
+    // 9. RC RA WY
+    uint16_t u = (state->b ^ 0177777) | state->a;
+    // Memory cycle writeback
+    mem_write(state, state->g);
+    // 10. RU WB
+    state->b = u;
+    // 11. RC WA
+    state->a = state->b ^ 0177777;
+}
+
+static void exec_WAND0(agc_state_t *state) {
+    // 1. RL10BB WS
+    state->s = state->b & 01777;
+    // 2. RA WB
+    state->b = state->a;
+    // 3. RC WY
+    uint16_t u = state->b ^ 0177777;
+    // 4. RCH WB
+    state->b = control_rch(state);
+    // 5. RC RU WA
+    state->a = (state->b ^ 0177777) | u;
+    // 6. RA WB
+    state->b = state->a;
+    // 7. RC WA WCH
+    state->a = state->b ^ 0177777;
+    control_wch(state, state->a);
+    // 8. RZ WS ST2
+    state->s = state->z & 07777;
+    state->st_pend = 2;
+}
+
+static void exec_QXCH0(agc_state_t *state) {
+    // 1. RL10BB WS
+    state->s = state->b & 01777;
+    // 2. RSC WG
+    state->g = control_rsc(state);
+    // 3. RQ WB
+    state->b = state->q;
+    // Memory cycle completion
+    state->g |= mem_read(state);
+    // 5. RG WQ
+    state->q = state->g;
+    // 7. RB WSC WG
+    control_wsc(state, state->b);
+    control_wg(state, state->b);
+    // 8. RZ WS ST2
+    state->s = state->z & 07777;
+    state->st_pend = 2;
+    // Memory cycle writeback
+    mem_write(state, state->g);
 }
 
 static void exec_STD2(agc_state_t *state) {
