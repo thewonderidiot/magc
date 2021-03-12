@@ -5,6 +5,7 @@ uint16_t mem_read(agc_state_t *state) {
         return 0;
     }
 
+    // FIXME: check parity
     if (state->s < 01400) {
         return state->e[state->s];
     } else if (state->s < 02000) {

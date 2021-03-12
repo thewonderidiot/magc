@@ -3,6 +3,7 @@ OBJECTS = main.o \
 	  subinst.o \
 	  control.o \
 	  mem.o \
+	  utils.o \
 
 magc: $(OBJECTS)
 	gcc -o magc $(OBJECTS)

@@ -29,7 +29,8 @@ typedef struct {
     uint8_t nisql;
 
     uint16_t e[2048];
-    uint16_t f[65336];
+    uint16_t f[65536];
+    uint8_t tpgf[65536];
 
     uint16_t mwl;
 } agc_state_t;
