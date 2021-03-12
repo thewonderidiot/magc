@@ -48,7 +48,7 @@ void subinst_exec(agc_state_t *state) {
 
 static void exec_TC0(agc_state_t *state) {
     // 1. RB WY12 CI
-    uint16_t u = control_add(state->b & 07777, 1);
+    uint16_t u = control_add(state->b & 07777, 0, 1);
     // 2. RSC WG NISQ
     state->g = control_rsc(state);
     state->nisql = 1;
@@ -108,14 +108,14 @@ static void exec_CCS0(agc_state_t *state) {
     // 10. 10 RC WY MONEX CI ST2
     switch (br) {
     case 0:
-        u = control_add(state->b, 0177776);
+        u = control_add(state->b, 0177776, 1);
         break;
     case 1:
     case 3:
         u = 0;
         break;
     case 2:
-        u = control_add(state->b ^ 0177777, 0177776);
+        u = control_add(state->b ^ 0177777, 0177776, 1);
         break;
     }
     state->st_pend |= 2;
@@ -127,7 +127,7 @@ static void exec_CCS0(agc_state_t *state) {
 
 static void exec_TCF0(agc_state_t *state) {
     // 1. RB WY12 CI
-    uint16_t u = control_add(state->b & 07777, 1);
+    uint16_t u = control_add(state->b & 07777, 0, 1);
     // 2. RSC WG NISQ
     state->g = control_rsc(state);
     state->nisql = 1;
@@ -216,7 +216,7 @@ static void exec_NDX1(agc_state_t *state) {
     // 6. RU WZ
     state->z = u;
     // 7. RG WY A2X
-    u = control_add(state->g, state->a);
+    u = control_add(state->g, state->a, 0);
     // 8. RU WS
     state->s = u & 07777;
     // 9. RB WA
@@ -318,7 +318,7 @@ static void exec_AD0(agc_state_t *state) {
     // Memory cycle writeback
     mem_write(state, state->g);
     // 10. RB WY A2X
-    uint16_t u = control_add(state->b, state->a);
+    uint16_t u = control_add(state->b, state->a, 0);
     // 11. RU WA
     state->a = u;
 }
@@ -391,7 +391,7 @@ static void exec_QXCH0(agc_state_t *state) {
 
 static void exec_STD2(agc_state_t *state) {
     // 1. RZ WY12 CI
-    uint16_t u = control_add(state->z & 07777, 1);
+    uint16_t u = control_add(state->z & 07777, 0, 1);
     // 2. RSC WG NISQ
     state->g = control_rsc(state);
     state->nisql = 1;

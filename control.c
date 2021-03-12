@@ -13,9 +13,9 @@ void control_gojam(agc_state_t *state) {
     state->inhint = 0;
 }
 
-uint16_t control_add(uint16_t x, uint16_t y) {
+uint16_t control_add(uint16_t x, uint16_t y, uint16_t ci) {
     uint32_t u = (uint32_t)x + (uint32_t)y;
-    u += (u >> 16) & 1;
+    u += ((u >> 16) & 1) | ci;
     return (u & 0177777);
 }
 
