@@ -142,6 +142,74 @@ static void exec_TCF0(agc_state_t *state) {
     mem_write(state, state->g);
 }
 
+static void exec_LXCH0(agc_state_t *state) {
+    // 1. RL10BB WS
+    state->s = state->b & 01777;
+    // 2. RSC WG
+    state->g = control_rsc(state);
+    // 3. RL WB
+    state->b = (state->l & 0137777) | ((state->l >> 1) & 040000);
+    // Memory cycle completion
+    state->g |= mem_read(state);
+    // 5. RG WL
+    state->l = state->g;
+    // 7. RB WSC WG
+    control_wsc(state, state->b);
+    control_wg(state, state->b);
+    // 8. RZ WS ST2
+    state->s = state->z & 07777;
+    state->st_pend = 2;
+    // Memory cycle writeback
+    mem_write(state, state->g);
+}
+
+static void exec_INCR0(agc_state_t *state) {
+    // 1. RL10BB WS
+    state->s = state->b & 01777;
+    // 2. RSC WG
+    state->g = control_rsc(state);
+    // Memory cycle completion
+    state->g |= mem_read(state);
+    // 5. RG WY TSGN TMZ TPZG
+    // 6. PONEX
+    uint16_t u = control_add(state->g, 1, 0);
+    // 7. RU WSC WG WOVR
+    control_wsc(state, u);
+    control_wg(state, u);
+    // FIXME: WOVR
+    // 8. RZ WS ST2
+    state->s = state->z & 07777;
+    state->st_pend = 2;
+    // Memory cycle writeback
+    mem_write(state, state->g);
+}
+
+static void exec_ADS0(agc_state_t *state) {
+    // 1. RL10BB WS
+    state->s = state->b & 01777;
+    // 2. RSC WG
+    state->g = control_rsc(state);
+    // Memory cycle completion
+    state->g |= mem_read(state);
+    // 5. RG WY A2X
+    uint16_t u = control_add(state->g, state->a, 0);
+    // 6. RU WSC WG TOV
+    control_wsc(state, u);
+    control_wg(state, u);
+    // 7. 00 WA (no effect)
+    // 7. 01 WA RB1 (no effect)
+    // 7. 10 WA R1C (no effect)
+    // 7. 11 WA (no effect)
+    // 8. RZ WS ST2
+    state->s = state->z & 07777;
+    state->st_pend = 2;
+    // 9. RC TMZ (no effect)
+    // 10. RU WA
+    state->a = u;
+    // Memory cycle writeback
+    mem_write(state, state->g);
+}
+
 static void exec_CA0(agc_state_t *state) {
     // 2. RSC WG
     state->g = control_rsc(state);
@@ -242,6 +310,50 @@ static void exec_RSM3(agc_state_t *state) {
     // 8. RAD WB WS
     state->b = control_rad(state);
     state->s = state->b & 07777;
+    // Memory cycle writeback
+    mem_write(state, state->g);
+}
+
+static void exec_DXCH0(agc_state_t *state) {
+    // 1. RL10BB WS WY12 MONEX CI
+    state->s = state->b & 01777;
+    uint16_t u = control_add(state->s, 0177776, 1);
+    // 2. RSC WG
+    state->g = control_rsc(state);
+    // 3. RL WB
+    state->b = (state->l & 0137777) | ((state->l >> 1) & 040000);
+    // Memory cycle completion
+    state->g |= mem_read(state);
+    // 5. RG WL
+    state->l = state->g;
+    // 7. RB WSC WG
+    control_wsc(state, state->b);
+    control_wg(state, state->b);
+    // 8. RU WS WB
+    state->s = u;
+    state->b = u;
+    // Memory cycle writeback
+    mem_write(state, state->g);
+    // 10. ST1
+    state->st_pend = 1;
+}
+
+static void exec_DXCH1(agc_state_t *state) {
+    // 1. RL10BB WS (no effect)
+    // 2. RSC WG
+    state->g = control_rsc(state);
+    // 3. RA WB
+    state->b = state->a;
+    // Memory cycle completion
+    state->g |= mem_read(state);
+    // 5. RG WA
+    state->a = state->g;
+    // 7. RB WSC WG
+    control_wsc(state, state->b);
+    control_wg(state, state->b);
+    // 8. RZ WS ST2
+    state->s = state->z & 07777;
+    state->st_pend = 2;
     // Memory cycle writeback
     mem_write(state, state->g);
 }
