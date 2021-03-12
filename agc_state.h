@@ -13,13 +13,12 @@ typedef struct {
     
     uint16_t g;
     uint16_t b;
+    uint8_t futext;
     uint8_t sqext;
     uint8_t sq;
     uint8_t qc;
     uint8_t sqr10;
     uint16_t s;
-    uint8_t br;
-    uint16_t mem;
 
     uint8_t iip;
     uint8_t inhint;
@@ -31,6 +30,7 @@ typedef struct {
     uint16_t e[2048];
     uint16_t f[65536];
     uint8_t tpgf[65536];
+    uint16_t writeback;
 
     uint16_t mwl;
 } agc_state_t;

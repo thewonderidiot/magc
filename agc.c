@@ -23,7 +23,7 @@ void agc_service(agc_state_t *state) {
         state->sq = ((state->b >> 12) & 03) | ((state->b >> 13) & 04);
         state->qc = (state->b >> 10) & 03;
         state->sqr10 = (state->b >> 9) & 01;
-        state->sqext = 0;
+        state->sqext = state->futext;
     }
 
     state->st = state->st_pend;
