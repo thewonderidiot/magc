@@ -19,6 +19,7 @@ typedef struct {
     uint8_t qc;
     uint8_t sqr10;
     uint16_t s;
+    uint16_t u;
 
     uint8_t iip;
     uint8_t inhint;
