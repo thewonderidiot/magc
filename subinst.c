@@ -166,17 +166,17 @@ static void exec_DAS0(agc_state_t *state) {
     control_wsc(state, u);
     control_wg(state, u);
     uint16_t sign_bits = u & 0140000;
-    uint16_t additive = 0;
+    uint16_t x = 0;
     if (sign_bits == 0040000) {
-        additive = 1;
+        x = 1;
     } else if (sign_bits == 0100000) {
-        additive = 0177776;
+        x = 0177776;
     }
     // 10. 00 RA WY ST1
     // 10. 01 RA WY ST1 PONEX
     // 10. 10 RA WY ST1 MONEX
     // 10. 11 RA WY ST1
-    state->u = control_add(state->a, additive, 0);
+    state->u = control_add(state->a, x, 0);
     state->st_pend = 1;
     // Memory cycle writeback
     mem_write(state, state->g);
@@ -645,11 +645,11 @@ static void exec_AUG0(agc_state_t *state) {
     // 5. RG WY TSGN TMZ TPZG
     // 6. 0X PONEX
     // 6. 1X MONEX
-    uint16_t additive = 1;
+    uint16_t x = 1;
     if (state->g & 0100000) {
-        additive = 0177776;
+        x = 0177776;
     }
-    uint16_t u = control_add(state->g, additive, 0);
+    uint16_t u = control_add(state->g, x, 0);
     // 7. RU WSC WG WOVR
     control_wsc(state, u);
     control_wg(state, u);
@@ -671,15 +671,15 @@ static void exec_DIM0(agc_state_t *state) {
     // 5. RG WY TSGN TMZ TPZG
     // 6. 00 MONEX
     // 6. 10 PONEX
-    uint16_t additive;
+    uint16_t x;
     if (state->g == 0 || state->g == 0177777) {
-        additive = 0;
+        x = 0;
     } else if (state->g & 0100000) {
-        additive = 1;
+        x = 1;
     } else {
-        additive = 0177776;
+        x = 0177776;
     }
-    uint16_t u = control_add(state->g, additive, 0);
+    uint16_t u = control_add(state->g, x, 0);
     // 7. RU WSC WG WOVR
     control_wsc(state, u);
     control_wg(state, u);
@@ -816,6 +816,117 @@ static void exec_BZMF0(agc_state_t *state) {
     }
     // Memory cycle writeback
     mem_write(state, state->g);
+}
+
+static void exec_MP0(agc_state_t *state) {
+    // testing
+    // state->a = 016344;
+    // 2. RSC WG
+    state->g = control_rsc(state);
+    // 3. RA WB TSGN
+    state->b = state->a;
+    // 4. 0X RB WL
+    // 4. 1X RC WL
+    state->l = state->b;
+    uint16_t br1 = state->b & 0100000;
+    if (br1) {
+        state->l ^= 0177777;
+    }
+    // Memory cycle completion
+    state->g |= mem_read(state);
+    // testing
+    // state->g = 0167676;
+    // 7. RG WB TSGN2
+    state->b = state->g;
+    uint16_t br2 = state->b & 0100000;
+    // 8. RZ WS
+    state->s = state->z & 07777;
+    // 9. 00 RB WY
+    // 9. 01 RB WY CI
+    // 9. 10 RC WY CI
+    // 9. 11 RC WY
+    uint16_t y = state->b;
+    uint16_t ci = 0;
+    if (br1) {
+        y ^= 0177777;
+    }
+    if (br1 != br2) {
+        ci = 1;
+    }
+    uint16_t u = control_add(y, 0, ci);
+    // 10. RU WB TSGN ST1 NEACON
+    state->b = u;
+    state->st_pend = 1;
+    // Memory cycle writeback
+    mem_write(state, state->g);
+    // 11. 0X WA
+    // 11. 1X WA RB1 R1C L16
+    if (u & 0100000) {
+        state->a = 0177777;
+        state->l |= 0100000;
+    } else {
+        state->a = 0;
+    }
+}
+
+static void exec_MP1(agc_state_t *state) {
+    // 1. ZIP
+    control_zip(state);
+    // 2. ZAP
+    control_zap(state);
+    // 3. ZIP
+    control_zip(state);
+    // 4. ZAP
+    control_zap(state);
+    // 5. ZIP
+    control_zip(state);
+    // 6. ZAP
+    control_zap(state);
+    // 7. ZIP
+    control_zip(state);
+    // 8. ZAP
+    control_zap(state);
+    // 9. ZIP
+    control_zip(state);
+    // 10. ZAP ST1 ST2
+    control_zap(state);
+    state->st_pend = 3;
+    // 11. ZIP
+    control_zip(state);
+}
+
+static void exec_MP3(agc_state_t *state) {
+    // 1. ZAP
+    control_zap(state);
+    // 2. ZIP NISQ
+    control_zip(state);
+    state->nisql = 1;
+    // 3. ZAP
+    control_zap(state);
+    // 4. RSC WG
+    state->g = control_rsc(state);
+    // Memory cycle completion
+    state->g |= mem_read(state);
+    // 5. RZ WY12 CI
+    uint16_t u = control_add(state->z & 07777, 0, 1);
+    // 6. RU WZ TL15 NEACOF
+    state->z = u;
+    uint16_t br1 = state->l & 040000;
+    // 7. 1X RB WY A2X
+    if (br1) {
+        u = (state->b + state->a) & 0177777;
+    }
+    // 8. RAD WB WS
+    state->b = control_rad(state);
+    state->s = state->b & 07777;
+    // 9. RA (no effect)
+    // 10. RL (no effect)
+    // Memory cycle writeback
+    mem_write(state, state->g);
+    // 11. 1X RU WA
+    if (br1) {
+        state->a = u;
+    }
 }
 
 static void exec_STD2(agc_state_t *state) {

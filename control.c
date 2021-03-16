@@ -99,6 +99,54 @@ void control_wg(agc_state_t *state, uint16_t wl) {
     }
 }
 
+void control_zip(agc_state_t *state) {
+    // A2X L2GD
+    uint16_t y;
+    uint16_t ci = 0;
+    uint16_t mcro = 0;
+    switch (state->l & 040003) {
+    case 040003:
+        // MCRO
+        mcro = 1;
+    case 000000:
+        // WY
+        y = 0;
+        break;
+    case 000001:
+    case 040000:
+        // RB WY
+        y = state->b;
+        break;
+    case 000002:
+    case 040001:
+        // RB WYD
+        y = (state->b & 0100000) | ((state->b << 1) & 077776);
+        break;
+    case 000003:
+    case 040002:
+        // RC WY CI MCRO
+        y = state->b ^ 0177777;
+        ci = 1;
+        mcro = 1;
+        break;
+    }
+
+    state->u = (state->a + y + ci) & 0177777;
+    state->g = (state->l & 0100000) | ((state->l << 1) & 077776) | mcro;
+}
+
+void control_zap(agc_state_t *state) {
+    // RU G2LS WALS
+    state->a = (state->u >> 2);
+    uint16_t a_sign = state->g;
+    if (state->g & 01) {
+        a_sign = state->u;
+    }
+    state->a |= (a_sign & 0100000) | ((a_sign >> 1) & 040000);
+    state->l = (state->g & 0100000) | ((state->g >> 3) & 07777) |
+               ((state->g << 14) & 040000) | (state->u << 12) & 030000;
+}
+
 uint16_t control_rch(agc_state_t *state) {
     // FIXME
     return 0;
