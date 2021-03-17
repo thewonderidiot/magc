@@ -13,7 +13,7 @@ int main(int argc, char **argv) {
     agc_init(&agc_state);
     agc_load_rope(&agc_state, argv[1]);
 
-    for (int i = 0; i < 2000; i++) {
+    for (int i = 0; i < 3000; i++) {
         agc_service(&agc_state);
         if (i == 200) {
             agc_state.e[01050] = 1;

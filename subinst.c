@@ -561,6 +561,213 @@ static void exec_WAND0(agc_state_t *state) {
     state->st_pend = 2;
 }
 
+static void exec_DV0(agc_state_t *state) {
+    // 1. RA WB TSGN TMZ
+    state->b = state->a;
+    uint16_t br1 = state->a & 0100000;
+    uint16_t br2 = (state->a == 0177777);
+    // 2. 0X RC WA TMZ DVST
+    // 2. 1X DVST
+    if ((state->a & 0100000) == 0) {
+        state->a = state->b ^ 0177777;
+        br2 = (state->a == 0177777);
+    }
+    // 3. RU WB STAGE
+    state->st_pend = 1;
+    // ------------------------- DV1 -------------------------
+    // 4. X0 RL WB
+    // 4. X1 RL WB TSGN
+    state->b = (state->l & 0137777) | ((state->l >> 1) & 040000);
+    if (br2) {
+        br1 = state->l & 0100000;
+    }
+    // Memory cycle completion
+    state->g = mem_read(state);
+    // 5. 0X RB WY B15X
+    // 5. 1X RC WY B15X Z16
+    uint16_t u;
+    if (br1) {
+        u = control_add(state->b ^ 0177777, 040000, 0);
+        state->z |= 0100000;
+    } else {
+        u = control_add(state->b, 040000, 0);
+    }
+    // 6. RU WL TOV
+    state->l = u;
+    br2 = (u & 0140000) == 0040000;
+    // 7. RG RSC WB TSGN
+    state->b = state->g | control_rsc(state);
+    br1 = state->b & 0100000;
+    // 8. X0 RA WY PONEX
+    // 8. X1 RA WY
+    uint16_t x = 0;
+    if (!br2) {
+        x = 1;
+    }
+    u = control_add(state->a, x, 0);
+    // 9. 0X RB WA
+    // 9. 1X RC WA Z15
+    if (br1) {
+        state->a = state->b ^ 0177777;
+        state->z |= 040000;
+    } else {
+        state->a = state->b;
+    }
+    // 10. RU WB
+    state->b = u;
+    // Memory cycle writeback
+    mem_write(state, state->g);
+    // 11. RL WYD
+    uint16_t y = (state->l & 0100000) | ((state->l << 1) & 077776) | (state->l >> 15);
+    // 12. RU WL
+    state->l = y;
+}
+
+static void exec_DV1376(agc_state_t *state, uint8_t stage){
+    uint16_t y;
+    uint16_t u;
+    // 1. L2GD RB WYD A2X PIFL
+    state->g = (state->l & 0100000) | ((state->l << 1) & 077776);
+    y = (state->b & 0100000) | ((state->b << 1) & 077776);
+    if ((state->l & 040000) == 0) {
+        y |= state->b >> 15;
+    }
+    u = control_add(state->a, y, 0);
+    // 2. 0X RG WL TSGU DVST CLXC
+    // 2. 1X RG WL TSGU DVST RB1F
+    state->l = state->g;
+    if (u & 0100000) {
+        state->l |= 1;
+    } else {
+        u = y;
+    }
+    // 3. RU WB STAGE
+    state->b = u;
+    state->st_pend = stage;
+    // ------------------------- NEXT STAGE -------------------------
+    // 4. L2GD RB WYD A2X PIFL
+    state->g = (state->l & 0100000) | ((state->l << 1) & 077776);
+    y = (state->b & 0100000) | ((state->b << 1) & 077776);
+    if ((state->l & 040000) == 0) {
+        y |= state->b >> 15;
+    }
+    u = control_add(state->a, y, 0);
+    // 5. 0X RG WL TSGU CLXC
+    // 5. 1X RG WL TSGU RB1F
+    state->l = state->g;
+    if (u & 0100000) {
+        state->l |= 1;
+    } else {
+        u = y;
+    }
+    // 6. RU WB
+    state->b = u;
+    // 7. L2GD RB WYD A2X PIFL
+    state->g = (state->l & 0100000) | ((state->l << 1) & 077776);
+    y = (state->b & 0100000) | ((state->b << 1) & 077776);
+    if ((state->l & 040000) == 0) {
+        y |= state->b >> 15;
+    }
+    u = control_add(state->a, y, 0);
+    // 8. 0X RG WL TSGU CLXC
+    // 8. 1X RG WL TSGU RB1F
+    state->l = state->g;
+    if (u & 0100000) {
+        state->l |= 1;
+    } else {
+        u = y;
+    }
+    // 9. RU WB
+    state->b = u;
+    // 10. L2GD RB WYD A2X PIFL
+    state->g = (state->l & 0100000) | ((state->l << 1) & 077776);
+    y = (state->b & 0100000) | ((state->b << 1) & 077776);
+    if ((state->l & 040000) == 0) {
+        y |= state->b >> 15;
+    }
+    u = control_add(state->a, y, 0);
+    // 11. 0X RG WL TSGU CLXC
+    // 11. 1X RG WL TSGU RB1F
+    state->l = state->g;
+    if (u & 0100000) {
+        state->l |= 1;
+    } else {
+        u = y;
+    }
+    // 12. RU WB
+    state->b = u;
+}
+
+static void exec_DV1(agc_state_t *state) {
+    exec_DV1376(state, 3);
+}
+
+static void exec_DV3(agc_state_t *state) {
+    exec_DV1376(state, 7);
+}
+
+static void exec_DV7(agc_state_t *state) {
+    exec_DV1376(state, 6);
+}
+
+static void exec_DV6(agc_state_t *state) {
+    uint16_t y;
+    uint16_t u;
+    // 1. L2GD RB WYD A2X PIFL
+    state->g = (state->l & 0100000) | ((state->l << 1) & 077776);
+    y = (state->b & 0100000) | ((state->b << 1) & 077776);
+    if ((state->l & 040000) == 0) {
+        y |= state->b >> 15;
+    }
+    u = control_add(state->a, y, 0);
+    // 2. 0X RG WL TSGU DVST CLXC
+    // 2. 1X RG WL TSGU DVST RB1F
+    state->l = state->g;
+    if (u & 0100000) {
+        state->l |= 1;
+    } else {
+        u = y;
+    }
+    // 3. RU WB STAGE
+    state->b = u;
+    state->st_pend = 4;
+    // ------------------------- DV4 -------------------------
+    // 4. L2GD RB WYD A2X PIFL
+    state->g = (state->l & 0100000) | ((state->l << 1) & 077776);
+    y = (state->b & 0100000) | ((state->b << 1) & 077776);
+    if ((state->l & 040000) == 0) {
+        y |= state->b >> 15;
+    }
+    u = control_add(state->a, y, 0);
+    // 5. 0X RG WB WA TSGU DVST CLXC
+    // 5. 1X RG WB WA TSGU DVST RB1F
+    state->b = state->g;
+    state->a = state->g;
+    if (u & 0100000) {
+        state->b |= 1;
+        state->a |= 1;
+    } else {
+        u = y;
+    }
+    // 6. RZ TOV
+    uint16_t sign = (state->z & 0140000);
+    // 7. 01 RC WA
+    // 7. 1X RC WA
+    if ((sign == 0100000) || (sign == 0040000)) {
+        state->a = state->b ^ 0177777;
+    }
+    // 8. RZ WS ST2 TSGN RSTSTG
+    state->s = state->z & 07777;
+    state->st_pend = 2;
+    // 9. RU WB WL
+    state->b = u;
+    state->l = u;
+    // 10. 0X RC WL
+    if ((state->z & 0100000) == 0) {
+        state->l = state->b ^ 0177777;
+    }
+}
+
 static void exec_BZF0(agc_state_t *state) {
     // 1. RA WG TSGN TMZ
     // 2. TPZG
@@ -819,8 +1026,6 @@ static void exec_BZMF0(agc_state_t *state) {
 }
 
 static void exec_MP0(agc_state_t *state) {
-    // testing
-    // state->a = 016344;
     // 2. RSC WG
     state->g = control_rsc(state);
     // 3. RA WB TSGN
@@ -834,8 +1039,6 @@ static void exec_MP0(agc_state_t *state) {
     }
     // Memory cycle completion
     state->g |= mem_read(state);
-    // testing
-    // state->g = 0167676;
     // 7. RG WB TSGN2
     state->b = state->g;
     uint16_t br2 = state->b & 0100000;
