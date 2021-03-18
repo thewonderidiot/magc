@@ -27,6 +27,7 @@ typedef struct {
     uint8_t st;
     uint8_t st_pend;
     uint8_t nisql;
+    uint8_t edit;
 
     uint16_t e[2048];
     uint16_t f[65536];

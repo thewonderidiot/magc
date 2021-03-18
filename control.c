@@ -56,6 +56,11 @@ uint16_t control_rsc(agc_state_t *state) {
         return (state->eb >> 8) | state->fb | ((state->fb << 1) & 0100000);
     case 7:
         return 0;
+    case 020:
+    case 021:
+    case 022:
+    case 023:
+        state->edit = state->s;
     default:
         return 0;
     }
@@ -91,8 +96,19 @@ void control_wsc(agc_state_t *state, uint16_t wl) {
 }
 
 void control_wg(agc_state_t *state, uint16_t wl) {
-    switch (state->s) {
-    // FIXME: EDIT
+    switch (state->edit) {
+    case 020:
+        state->g = ((wl >> 2) & 020000) | ((wl >> 1) & 017777) | ((wl << 15) & 0100000);
+        break;
+    case 021:
+        state->g = (wl & 0100000) | ((wl >> 2) & 020000) | ((wl >> 1) & 017777);
+        break;
+    case 022:
+        state->g = ((wl << 2) & 0100000) | ((wl << 1) & 037776) | (wl >> 15);
+        break;
+    case 023:
+        state->g = (wl >> 7) & 0177;
+        break;
     default:
         state->g = wl;
         break;
@@ -148,10 +164,25 @@ void control_zap(agc_state_t *state) {
 }
 
 uint16_t control_rch(agc_state_t *state) {
+    uint16_t chan = state->s & 077;
+    switch (chan) {
+    case 001:
+        return (state->l & 0137777) | ((state->l >> 1) & 040000);
+    case 002:
+        return state->q;
     // FIXME
-    return 0;
+    default:
+        return 0;
+    }
 }
 
 void control_wch(agc_state_t *state, uint16_t wl) {
+    uint16_t chan = state->s & 077;
+    switch (chan) {
+    case 001:
+        state->l = wl;
+    case 002:
+        state->q = wl;
     // FIXME
+    }
 }

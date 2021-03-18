@@ -6,7 +6,7 @@ OBJECTS = main.o \
 	  utils.o \
 
 magc: $(OBJECTS)
-	gcc -o magc $(OBJECTS)
+	$(CC) -o magc $(OBJECTS)
 
 clean:
-	rm *.o magc
+	rm -f *.o magc
