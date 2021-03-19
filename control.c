@@ -1,5 +1,12 @@
+//---------------------------------------------------------------------------//
+//                                 Includes                                  //
+//---------------------------------------------------------------------------//
+#include "counter.h"
 #include "control.h"
 
+//---------------------------------------------------------------------------//
+//                        Global Function Definitions                        //
+//---------------------------------------------------------------------------//
 void control_gojam(agc_state_t *state) {
     state->nisql = 0;
     state->futext = 0;
@@ -11,6 +18,8 @@ void control_gojam(agc_state_t *state) {
     state->st_pend = 0;
     state->iip = 0;
     state->inhint = 0;
+    state->gnhnc = 1;
+    state->inkl = 0;
 }
 
 uint16_t control_add(uint16_t x, uint16_t y, uint16_t ci) {
@@ -24,16 +33,20 @@ uint16_t control_rad(agc_state_t *state) {
     case 000003:
         state->inhint = 0;
         state->st_pend = 2;
+        state->pseudo = 1;
         return state->z;
     case 000004:
         state->inhint = 1;
         state->st_pend = 2;
+        state->pseudo = 1;
         return state->z;
     case 000006:
         state->futext = 1;
         state->st_pend = 2;
+        state->pseudo = 1;
         return state->z;
     default:
+        state->pseudo = 0;
         return state->g;
     }
 }
@@ -161,6 +174,25 @@ void control_zap(agc_state_t *state) {
     state->a |= (a_sign & 0100000) | ((a_sign >> 1) & 040000);
     state->l = (state->g & 0100000) | ((state->g >> 3) & 07777) |
                ((state->g << 14) & 040000) | (state->u << 12) & 030000;
+}
+
+void control_wovr(agc_state_t *state, uint16_t wl) {
+    if ((wl & 0140000) == 0040000) {
+        switch (state->s) {
+        case 025:
+            counter_request(state, COUNTER_TIME2, COUNT_UP);
+            break;
+        case 026:
+            state->pending_rupts |= (1 << RUPT_T3RUPT);
+            break;
+        case 027:
+            state->pending_rupts |= (1 << RUPT_T4RUPT);
+            break;
+        case 030:
+            state->pending_rupts |= (1 << RUPT_T5RUPT);
+            break;
+        }
+    }
 }
 
 uint16_t control_rch(agc_state_t *state) {

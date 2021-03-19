@@ -1,5 +1,7 @@
 OBJECTS = main.o \
 	  agc.o \
+	  scaler.o \
+	  counter.o \
 	  subinst.o \
 	  control.o \
 	  mem.o \

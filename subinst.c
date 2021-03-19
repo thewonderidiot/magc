@@ -1,13 +1,24 @@
+//---------------------------------------------------------------------------//
+//                                 Includes                                  //
+//---------------------------------------------------------------------------//
 #include <stdio.h>
 #include "control.h"
 #include "mem.h"
 #include "subinst.h"
 
+//---------------------------------------------------------------------------//
+//                         Local Function Prototypes                         //
+//---------------------------------------------------------------------------//
 #define X(_n,...) \
 static void exec_##_n(agc_state_t *state);
 SUBINSTRUCTIONS
 #undef X
 
+static void exec_DV1376(agc_state_t *state, uint8_t stage);
+
+//---------------------------------------------------------------------------//
+//                        Global Function Definitions                        //
+//---------------------------------------------------------------------------//
 void subinst_exec(agc_state_t *state) {
     uint16_t op = (state->sqext << 3) | state->sq;
     uint16_t subinst_id = state->st;
@@ -36,7 +47,7 @@ void subinst_exec(agc_state_t *state) {
     switch (subinst_id) {
 #define X(_n, ...) \
     case SUBINST_##_n: \
-        /* printf("%s\n", #_n); */ \
+        printf("%s\n", #_n); \
         exec_##_n(state); \
         break;
     SUBINSTRUCTIONS
@@ -44,10 +55,28 @@ void subinst_exec(agc_state_t *state) {
     default:
         printf("UNKNOWN INSTRUCTION\n");
     }
-    // T12 cleanup
-    state->edit = 0;
 }
 
+void exec_PINC(agc_state_t *state, uint16_t rsct) {
+    printf("PINC %02o\n", rsct, state->scaler);
+    // 1. RSCT WS
+    state->s = rsct;
+    // 2. RSC WG (no effect)
+    // STBE/STBF
+    state->g = mem_read(state);
+    // 5. RG WY TSGN TMZ TPZG
+    // 6. PONEX
+    uint16_t u = control_add(1, state->g, 0);
+    // 7. RU WSC WG WOVR
+    state->g = u;
+    control_wovr(state, u);
+    // 8. RB WS
+    state->s = state->b & 07777;
+}
+
+//---------------------------------------------------------------------------//
+//                        Local Function Definitions                         //
+//---------------------------------------------------------------------------//
 static void exec_TC0(agc_state_t *state) {
     // 1. RB WY12 CI
     uint16_t u = control_add(state->b & 07777, 0, 1);
@@ -259,7 +288,7 @@ static void exec_INCR0(agc_state_t *state) {
     // 7. RU WSC WG WOVR
     control_wsc(state, u);
     control_wg(state, u);
-    // FIXME: WOVR
+    control_wovr(state, u);
     // 8. RZ WS ST2
     state->s = state->z & 07777;
     state->st_pend = 2;
@@ -382,12 +411,12 @@ static void exec_RSM3(agc_state_t *state) {
     // 1. R15 WS
     state->s = 015;
     // 2. RSC WG NISQ
-    state->g = control_rsc(state);
     state->nisql = 1;
     // STBE/STBF
-    state->g |= mem_read(state);
+    state->g = mem_read(state);
     // 5. RG WZ
     state->z = state->g;
+    state->iip = 0;
     // 6. RB WG
     state->g = state->b;
     // 8. RAD WB WS
@@ -684,6 +713,8 @@ static void exec_RUPT0(agc_state_t *state) {
     // 1. R15 WS
     state->s = 015;
     // 2. RSC WG (no effect)
+    // STBE/STBF
+    mem_read(state);
     // 9. RZ WG
     state->g = state->z;
     // 10. ST1
@@ -693,17 +724,28 @@ static void exec_RUPT0(agc_state_t *state) {
 }
 
 static void exec_RUPT1(agc_state_t *state) {
+    uint8_t rupt_num = 0;
     // 1. R15 RB2 WS
     state->s = 017;
     // 2. RSC WG (no effect)
     // 3. RRPA WZ
-    state->z = 04000; // FIXME
+    if (state->pending_rupts) {
+        rupt_num = __builtin_ffs(state->pending_rupts) - 1;
+        state->z = 04000 + 4*rupt_num;
+    } else {
+        state->z = 00000;
+    }
+    // STBE/STBF
+    mem_read(state);
     // 8. RZ WS ST2
     state->s = state->z & 07777;
     state->st_pend = 2;
     // 9. RB WG KRPT
     state->g = state->b;
-    // FIXME
+    if (rupt_num) {
+        state->pending_rupts &= ~(1 << rupt_num);
+    }
+    state->iip = 1;
     // ZID
     mem_write(state, state->g);
 }
@@ -770,7 +812,19 @@ static void exec_DV0(agc_state_t *state) {
     state->l = y;
 }
 
-static void exec_DV1376(agc_state_t *state, uint8_t stage){
+static void exec_DV1(agc_state_t *state) {
+    exec_DV1376(state, 3);
+}
+
+static void exec_DV3(agc_state_t *state) {
+    exec_DV1376(state, 7);
+}
+
+static void exec_DV7(agc_state_t *state) {
+    exec_DV1376(state, 6);
+}
+
+static void exec_DV1376(agc_state_t *state, uint8_t stage) {
     uint16_t y;
     uint16_t u;
     // 1. L2GD RB WYD A2X PIFL
@@ -843,18 +897,6 @@ static void exec_DV1376(agc_state_t *state, uint8_t stage){
     }
     // 12. RU WB
     state->b = u;
-}
-
-static void exec_DV1(agc_state_t *state) {
-    exec_DV1376(state, 3);
-}
-
-static void exec_DV3(agc_state_t *state) {
-    exec_DV1376(state, 7);
-}
-
-static void exec_DV7(agc_state_t *state) {
-    exec_DV1376(state, 6);
 }
 
 static void exec_DV6(agc_state_t *state) {
@@ -1007,7 +1049,7 @@ static void exec_AUG0(agc_state_t *state) {
     // 7. RU WSC WG WOVR
     control_wsc(state, u);
     control_wg(state, u);
-    // FIXME: WOVR
+    control_wovr(state, u);
     // 8. RZ WS ST2
     state->s = state->z & 07777;
     state->st_pend = 2;
@@ -1037,7 +1079,7 @@ static void exec_DIM0(agc_state_t *state) {
     // 7. RU WSC WG WOVR
     control_wsc(state, u);
     control_wg(state, u);
-    // FIXME: WOVR
+    control_wovr(state, u);
     // 8. RZ WS ST2
     state->s = state->z & 07777;
     state->st_pend = 2;

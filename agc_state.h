@@ -1,8 +1,14 @@
 #ifndef _STATE_H_
 #define _STATE_H_
-
+//---------------------------------------------------------------------------//
+//                                 Includes                                  //
+//---------------------------------------------------------------------------//
 #include <stdint.h>
+#include "hw_defs.h"
 
+//---------------------------------------------------------------------------//
+//                             Type Definitions                              //
+//---------------------------------------------------------------------------//
 typedef struct {
     uint16_t a;
     uint16_t l;
@@ -21,6 +27,8 @@ typedef struct {
     uint16_t s;
     uint16_t u;
 
+    uint8_t pseudo;
+    uint8_t gnhnc;
     uint8_t iip;
     uint8_t inhint;
     uint8_t inkl;
@@ -29,10 +37,17 @@ typedef struct {
     uint8_t nisql;
     uint8_t edit;
 
-    uint16_t e[2048];
-    uint16_t f[65536];
-    uint8_t tpgf[65536];
+    uint16_t e[ERASABLE_SIZE];
+    uint16_t f[FIXED_SIZE];
+    uint8_t tpgf[FIXED_SIZE];
     uint16_t writeback;
+
+    uint8_t  scaler_divider;
+    uint32_t scaler;
+
+    uint8_t counters[NUM_COUNTERS];
+    uint32_t pending_counters;
+    uint16_t pending_rupts;
 
     uint16_t mwl;
 } agc_state_t;

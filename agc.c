@@ -1,34 +1,62 @@
+//---------------------------------------------------------------------------//
+//                                 Includes                                  //
+//---------------------------------------------------------------------------//
 #include <stdio.h>
+#include "scaler.h"
+#include "counter.h"
 #include "subinst.h"
 #include "control.h"
 #include "utils.h"
 #include "agc.h"
 
+//---------------------------------------------------------------------------//
+//                        Global Function Definitions                        //
+//---------------------------------------------------------------------------//
 void agc_init(agc_state_t *state) {
     control_gojam(state);
-
-    for (uint16_t i = 0; i < 2048; i++) {
-        state->e[i] = 0;
-    }
 }
 
 void agc_service(agc_state_t *state) {
-    // Check for counter pulses
+    scaler_advance(state);
 
-    // INKBT1
-    subinst_exec(state);
+    if (state->inkl) {
+        counter_service(state);
+    } else {
+        // INKBT1
+        if (state->st != 2) {
+            state->nisql = 0;
+            state->futext = 0;
+        }
+        state->gnhnc = 0;
 
-    if (state->st_pend != 2 && state->nisql) {
-        state->nisql = 0;
-        state->sq = ((state->b >> 12) & 03) | ((state->b >> 13) & 04);
-        state->qc = (state->b >> 10) & 03;
-        state->sqr10 = (state->b >> 9) & 01;
-        state->sqext = state->futext;
-        state->futext = 0;
+        subinst_exec(state);
     }
 
+    // T12
     state->st = state->st_pend;
     state->st_pend = 0;
+
+    state->edit = 0;
+
+    uint16_t a_sign = state->a & 0140000;
+    uint8_t ovnhrp = (a_sign == 0100000) || (a_sign == 0040000);
+    if (state->nisql) {
+        if (!state->gnhnc && !state->pseudo && state->pending_counters) {
+            state->inkl = 1;
+        }
+
+        if (state->pending_rupts && !state->inhint && !state->iip && !state->futext && !state->pseudo && !ovnhrp) {
+            state->sq = 00;
+            state->qc = 03;
+            state->sqr10 = 01;
+            state->sqext = 1;
+        } else {
+            state->sq = ((state->b >> 12) & 03) | ((state->b >> 13) & 04);
+            state->qc = (state->b >> 10) & 03;
+            state->sqr10 = (state->b >> 9) & 01;
+            state->sqext = state->futext;
+        }
+    }
 }
 
 void agc_load_rope(agc_state_t *state, char *rope_file) {
