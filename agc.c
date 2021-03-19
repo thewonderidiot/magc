@@ -46,6 +46,7 @@ void agc_service(agc_state_t *state) {
         }
 
         if (state->pending_rupts && !state->inhint && !state->iip && !state->futext && !state->pseudo && !ovnhrp) {
+            // RPTFRC
             state->sq = 00;
             state->qc = 03;
             state->sqr10 = 01;

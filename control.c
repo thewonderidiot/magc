@@ -197,24 +197,53 @@ void control_wovr(agc_state_t *state, uint16_t wl) {
 
 uint16_t control_rch(agc_state_t *state) {
     uint16_t chan = state->s & 077;
+    uint16_t chwl;
     switch (chan) {
     case 001:
         return (state->l & 0137777) | ((state->l >> 1) & 040000);
     case 002:
         return state->q;
-    // FIXME
+    case 003:
+        return (state->scaler >> 17) & 037777;
+    case 004:
+        return (state->scaler >> 3) & 037777;
+    case 005:
+        return state->chan5;
+    case 006:
+        return state->chan6;
+    case 007:
+        return (state->feb >> 9);
+    case 010:
+        chwl = state->dsky.out0;
+        break;
     default:
         return 0;
     }
+
+    return ((chwl << 1) & 0100000) | chwl;
 }
 
 void control_wch(agc_state_t *state, uint16_t wl) {
     uint16_t chan = state->s & 077;
+    uint16_t chwl = ((wl >> 1) & 040000) | (wl & 037777);
     switch (chan) {
     case 001:
         state->l = wl;
+        break;
     case 002:
         state->q = wl;
-    // FIXME
+        break;
+    case 005:
+        state->chan5 = wl & 0377;
+        break;
+    case 006:
+        state->chan6 = wl & 0377;
+        break;
+    case 007:
+        state->feb = (wl << 9) & 0160000;
+        break;
+    case 010:
+        state->dsky.out0 = chwl;
+        break;
     }
 }

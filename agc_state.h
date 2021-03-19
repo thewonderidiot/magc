@@ -5,6 +5,7 @@
 //---------------------------------------------------------------------------//
 #include <stdint.h>
 #include "hw_defs.h"
+#include "dsky.h"
 
 //---------------------------------------------------------------------------//
 //                             Type Definitions                              //
@@ -14,6 +15,7 @@ typedef struct {
     uint16_t l;
     uint16_t q;
     uint16_t z;
+    uint16_t feb;
     uint16_t fb;
     uint16_t eb;
     
@@ -50,6 +52,11 @@ typedef struct {
     uint16_t pending_rupts;
 
     uint16_t mwl;
+
+    uint8_t chan5;
+    uint8_t chan6;
+
+    dsky_t dsky;
 } agc_state_t;
 
 #endif//_STATE_H_

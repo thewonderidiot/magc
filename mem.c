@@ -24,13 +24,18 @@ uint16_t mem_read(agc_state_t *state) {
         state->e[addr] = 0;
         state->writeback = addr;
     } else {
-        // FIXME: check parity
         if (state->s < 04000) {
-            addr = state->fb | (state->s & ~02000);
+            if (state->feb & 0100000) {
+                addr = state->feb | (state->fb & 016000);
+            } else {
+                addr = state->fb;
+            }
+            addr |= state->s & ~02000;
         } else {
             addr = state->s;
         }
         val = state->f[addr];
+        // FIXME: check parity
     }
 
     return val;
