@@ -47,7 +47,6 @@ void subinst_exec(agc_state_t *state) {
     switch (subinst_id) {
 #define X(_n, ...) \
     case SUBINST_##_n: \
-        printf("%s\n", #_n); \
         exec_##_n(state); \
         break;
     SUBINSTRUCTIONS
@@ -58,7 +57,6 @@ void subinst_exec(agc_state_t *state) {
 }
 
 void exec_PINC(agc_state_t *state, uint16_t rsct) {
-    printf("PINC %02o\n", rsct, state->scaler);
     // 1. RSCT WS
     state->s = rsct;
     // 2. RSC WG (no effect)
@@ -72,6 +70,8 @@ void exec_PINC(agc_state_t *state, uint16_t rsct) {
     control_wovr(state, u);
     // 8. RB WS
     state->s = state->b & 07777;
+    // ZID
+    mem_write(state, state->g);
 }
 
 //---------------------------------------------------------------------------//

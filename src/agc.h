@@ -1,17 +1,15 @@
-#ifndef _DSKY_H_
-#define _DSKY_H_
+#ifndef _AGC_H_
+#define _AGC_H_
 //---------------------------------------------------------------------------//
 //                                 Includes                                  //
 //---------------------------------------------------------------------------//
-#include <stdint.h>
+#include "agc_state.h"
 
 //---------------------------------------------------------------------------//
-//                             Type Definitions                              //
+//                        Global Function Prototypes                         //
 //---------------------------------------------------------------------------//
-typedef struct {
-    uint16_t out0;
-    uint8_t vnflash;
-    uint8_t restart;
-} dsky_t;
+void agc_init(agc_state_t *state);
+void agc_service(agc_state_t *state);
+int agc_load_rope(agc_state_t *state, char *rope_file);
 
-#endif//_DSKY_H_
+#endif//_AGC_H_

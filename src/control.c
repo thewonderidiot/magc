@@ -74,6 +74,7 @@ uint16_t control_rsc(agc_state_t *state) {
     case 022:
     case 023:
         state->edit = state->s;
+        // fallthrough
     default:
         return 0;
     }
@@ -130,13 +131,14 @@ void control_wg(agc_state_t *state, uint16_t wl) {
 
 void control_zip(agc_state_t *state) {
     // A2X L2GD
-    uint16_t y;
+    uint16_t y = 0;
     uint16_t ci = 0;
     uint16_t mcro = 0;
     switch (state->l & 040003) {
     case 040003:
         // MCRO
         mcro = 1;
+        // fallthrough
     case 000000:
         // WY
         y = 0;
@@ -173,7 +175,7 @@ void control_zap(agc_state_t *state) {
     }
     state->a |= (a_sign & 0100000) | ((a_sign >> 1) & 040000);
     state->l = (state->g & 0100000) | ((state->g >> 3) & 07777) |
-               ((state->g << 14) & 040000) | (state->u << 12) & 030000;
+               ((state->g << 14) & 040000) | ((state->u << 12) & 030000);
 }
 
 void control_wovr(agc_state_t *state, uint16_t wl) {
@@ -216,6 +218,13 @@ uint16_t control_rch(agc_state_t *state) {
     case 010:
         chwl = state->dsky.out0;
         break;
+    case 015:
+        return state->chan15;
+    case 030:
+    case 031:
+    case 032:
+    case 033:
+        return 0177777;
     default:
         return 0;
     }

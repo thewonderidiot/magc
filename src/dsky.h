@@ -1,5 +1,5 @@
-#ifndef _AGC_H_
-#define _AGC_H_
+#ifndef _DSKY_H_
+#define _DSKY_H_
 //---------------------------------------------------------------------------//
 //                                 Includes                                  //
 //---------------------------------------------------------------------------//
@@ -8,8 +8,6 @@
 //---------------------------------------------------------------------------//
 //                        Global Function Prototypes                         //
 //---------------------------------------------------------------------------//
-void agc_init(agc_state_t *state);
-void agc_service(agc_state_t *state);
-void agc_load_rope(agc_state_t *state, char *rope_file);
+void dsky_set_chan15(agc_state_t *state, uint8_t keycode);
 
-#endif//_AGC_H_
+#endif//_DSKY_H_

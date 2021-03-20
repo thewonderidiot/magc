@@ -2,6 +2,7 @@
 //                                 Includes                                  //
 //---------------------------------------------------------------------------//
 #include <stdio.h>
+#include <errno.h>
 #include "scaler.h"
 #include "counter.h"
 #include "subinst.h"
@@ -60,9 +61,14 @@ void agc_service(agc_state_t *state) {
     }
 }
 
-void agc_load_rope(agc_state_t *state, char *rope_file) {
+int agc_load_rope(agc_state_t *state, char *rope_file) {
     FILE *fp = fopen(rope_file, "rb");
+    if (fp == NULL) {
+        return errno;
+    }
+
     size_t num_words = fread(state->f, sizeof(state->f[0]), NUM_ELEMENTS(state->f), fp);
+
     fclose(fp);
 
     for (size_t i = 0; i < num_words; i++) {
@@ -71,4 +77,6 @@ void agc_load_rope(agc_state_t *state, char *rope_file) {
         state->tpgf[i] = check_parity(word);
         state->f[i] = (word & 0137777) | ((word >> 1) & 040000);
     }
+
+    return 0;
 }

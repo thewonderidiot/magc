@@ -36,7 +36,9 @@
 *.x86_64
 *.hex
 *.bin
+*.rope
 magc
+__pycache__
 
 # Debug files
 *.dSYM/

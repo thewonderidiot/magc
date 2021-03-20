@@ -7,6 +7,7 @@
 //---------------------------------------------------------------------------//
 //                         Local Function Prototypes                         //
 //---------------------------------------------------------------------------//
+static void scaler_f09a(agc_state_t *state);
 static void scaler_f09b(agc_state_t *state);
 static void scaler_f10a(agc_state_t *state);
 static void scaler_f10b(agc_state_t *state);
@@ -47,7 +48,10 @@ void scaler_advance(agc_state_t *state) {
     default:
     case 10:
         scaler_f10a(state);
+        // fallthrough
     case 9:
+        scaler_f09a(state);
+        // fallthrough
     case 8:
     case 7:
     case 6:
@@ -62,9 +66,21 @@ void scaler_advance(agc_state_t *state) {
 //---------------------------------------------------------------------------//
 //                        Local Function Definitions                         //
 //---------------------------------------------------------------------------//
+static void scaler_f09a(agc_state_t *state) {
+    if (state->chan15 && !state->kyrpt1_set) {
+        state->kyrpt1_pending = 1;
+    }
+}
+
 static void scaler_f09b(agc_state_t *state) {
     if (!(state->scaler & FS10)) {
         counter_request(state, COUNTER_TIME4, COUNT_UP);
+    }
+
+    if (state->kyrpt1_pending) {
+        state->pending_rupts |= (1 << RUPT_KEYRUPT1);
+        state->kyrpt1_set = 1;
+        state->kyrpt1_pending = 0;
     }
 }
 
