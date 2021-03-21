@@ -23,6 +23,9 @@ uint16_t mem_read(agc_state_t *state) {
         val = state->e[addr];
         state->e[addr] = 0;
         state->writeback = addr;
+        if (addr == 067) {
+            state->night_watchman = 0;
+        }
     } else {
         if (state->s < 04000) {
             if ((state->fb >= 060000) && (state->feb & 0100000)) {
@@ -35,7 +38,9 @@ uint16_t mem_read(agc_state_t *state) {
             addr = state->s;
         }
         val = state->f[addr];
-        // FIXME: check parity
+        if (!state->tpgf[addr]) {
+            state->pale = 1;
+        }
     }
 
     return val;

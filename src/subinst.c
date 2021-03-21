@@ -54,6 +54,10 @@ void subinst_exec(agc_state_t *state) {
     default:
         printf("UNKNOWN INSTRUCTION\n");
     }
+
+    if ((subinst_id != SUBINST_TC0) && (subinst_id != SUBINST_TCF0)) {
+        state->only_tc = 0;
+    }
 }
 
 void exec_PINC(agc_state_t *state, uint16_t rsct) {
@@ -107,6 +111,8 @@ void exec_DINC(agc_state_t *state, uint16_t rsct) {
 //                        Local Function Definitions                         //
 //---------------------------------------------------------------------------//
 static void exec_TC0(agc_state_t *state) {
+    // Reset TC Trap
+    state->no_tc = 0;
     // 1. RB WY12 CI
     uint16_t u = control_add(state->b & 07777, 0, 1);
     // 2. RSC WG NISQ
@@ -186,6 +192,8 @@ static void exec_CCS0(agc_state_t *state) {
 }
 
 static void exec_TCF0(agc_state_t *state) {
+    // Reset TC Trap
+    state->no_tc = 0;
     // 1. RB WY12 CI
     uint16_t u = control_add(state->b & 07777, 0, 1);
     // 2. RSC WG NISQ
@@ -370,6 +378,8 @@ static void exec_CA0(agc_state_t *state) {
 }
 
 static void exec_CS0(agc_state_t *state) {
+    // Transient on TC0
+    state->no_tc = 0;
     // 2. RSC WG
     state->g = control_rsc(state);
     // STBE/STBF
@@ -446,6 +456,7 @@ static void exec_RSM3(agc_state_t *state) {
     // 5. RG WZ
     state->z = state->g;
     state->iip = 0;
+    state->only_rupt = 0;
     // 6. RB WG
     state->g = state->b;
     // 8. RAD WB WS
@@ -456,6 +467,8 @@ static void exec_RSM3(agc_state_t *state) {
 }
 
 static void exec_DXCH0(agc_state_t *state) {
+    // Transient on TCF0
+    state->no_tc = 0;
     // 1. RL10BB WS WY12 MONEX CI
     state->s = state->b & 01777;
     uint16_t u = control_add(state->s, 0177776, 1);
@@ -500,6 +513,8 @@ static void exec_DXCH1(agc_state_t *state) {
 }
 
 static void exec_TS0(agc_state_t *state) {
+    // Transient on TCF0
+    state->no_tc = 0;
     // 1. RL10BB WS
     state->s = state->b & 01777;
     // 2. RSC WG
@@ -536,6 +551,8 @@ static void exec_TS0(agc_state_t *state) {
 }
 
 static void exec_XCH0(agc_state_t *state) {
+    // Transient on TCF0
+    state->no_tc = 0;
     // 1. RL10BB WS
     state->s = state->b & 01777;
     // 2. RSC WG
@@ -775,6 +792,7 @@ static void exec_RUPT1(agc_state_t *state) {
         state->pending_rupts &= ~(1 << rupt_num);
     }
     state->iip = 1;
+    state->no_rupt = 0;
     // ZID
     mem_write(state, state->g);
 }

@@ -23,6 +23,7 @@ void agc_service(agc_state_t *state) {
     if (state->inkl) {
         counter_service(state);
     } else {
+        state->only_counts = 0;
         // INKBT1
         if (state->st != 2) {
             state->nisql = 0;
@@ -34,6 +35,11 @@ void agc_service(agc_state_t *state) {
     }
 
     // T12
+    if (state->pale) {
+        control_gojam(state);
+        state->chan77 |= 01;
+        return;
+    }
     state->st = state->st_pend;
     state->st_pend = 0;
 

@@ -19,9 +19,13 @@ void control_gojam(agc_state_t *state) {
     state->iip = 0;
     state->inhint = 0;
     state->gnhnc = 1;
-    state->inkl = 0;
     state->restart = 1;
     state->dsky.restart = 1;
+    state->pale = 0;
+    if (state->inkl) {
+        state->inkl = 0;
+        state->chan77 |= 0100; 
+    }
 }
 
 uint16_t control_add(uint16_t x, uint16_t y, uint16_t ci) {
@@ -258,6 +262,8 @@ uint16_t control_rch(agc_state_t *state) {
     case 032:
     case 033:
         return 0177777;
+    case 077:
+        return state->chan77_watchman | state->chan77;
     default:
         return 0;
     }
@@ -313,6 +319,9 @@ void control_wch(agc_state_t *state, uint16_t wl) {
         break;
     case 014:
         state->chan14 = chwl;
+        break;
+    case 077:
+        state->chan77 = 0;
         break;
     }
 }

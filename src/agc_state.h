@@ -76,13 +76,23 @@ typedef struct {
     uint16_t chan31;
     uint16_t chan32;
     uint16_t chan33;
+    uint16_t chan77;
+    uint16_t chan77_watchman;
 
     uint8_t stby;
     uint8_t restart;
     uint8_t altest;
+    uint8_t flash;
     uint8_t kyrpt1_pending;
     uint8_t kyrpt1_set;
-    uint8_t flash;
+
+    uint8_t pale;
+    uint8_t no_tc;
+    uint8_t only_tc;
+    uint8_t no_rupt;
+    uint8_t only_rupt;
+    uint8_t night_watchman;
+    uint8_t only_counts;
 
     dsky_t dsky;
 } agc_state_t;

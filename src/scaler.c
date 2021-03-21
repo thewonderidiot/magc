@@ -1,6 +1,7 @@
 //---------------------------------------------------------------------------//
 //                                 Includes                                  //
 //---------------------------------------------------------------------------//
+#include "control.h"
 #include "counter.h"
 #include "scaler.h"
 
@@ -8,12 +9,17 @@
 //                         Local Function Prototypes                         //
 //---------------------------------------------------------------------------//
 static void scaler_f06b(agc_state_t *state);
+static void scaler_f07a(agc_state_t *state);
+static void scaler_f07b(agc_state_t *state);
 static void scaler_f09a(agc_state_t *state);
 static void scaler_f09b(agc_state_t *state);
 static void scaler_f10a(agc_state_t *state);
 static void scaler_f10b(agc_state_t *state);
+static void scaler_f12b(agc_state_t *state);
+static void scaler_f14b(agc_state_t *state);
 static void scaler_f16b(agc_state_t *state);
 static void scaler_f17a(agc_state_t *state);
+static void scaler_f17b(agc_state_t *state);
 
 //---------------------------------------------------------------------------//
 //                        Global Function Definitions                        //
@@ -41,14 +47,26 @@ void scaler_advance(agc_state_t *state) {
     case 6:
         scaler_f06b(state);
         break;
+    case 7:
+        scaler_f07b(state);
+        break;
     case 9:
         scaler_f09b(state);
         break;
     case 10:
         scaler_f10b(state);
         break;
+    case 12:
+        scaler_f12b(state);
+        break;
+    case 14:
+        scaler_f14b(state);
+        break;
     case 16:
         scaler_f16b(state);
+        break;
+    case 17:
+        scaler_f17b(state);
         break;
     }
 
@@ -72,6 +90,8 @@ void scaler_advance(agc_state_t *state) {
         // fallthrough
     case 8:
     case 7:
+        scaler_f07a(state);
+        // fallthrough
     case 6:
     case 5:
     case 4:
@@ -87,6 +107,16 @@ void scaler_advance(agc_state_t *state) {
 static void scaler_f06b(agc_state_t *state) {
     if (state->chan13 & 040000) {
         counter_request(state, COUNTER_TIME6, COUNT_DOWN);
+    }
+}
+
+static void scaler_f07a(agc_state_t *state) {
+    state->only_counts = state->inkl;
+}
+
+static void scaler_f07b(agc_state_t *state) {
+    if (state->only_counts) {
+        state->chan77 |= 0100;
     }
 }
 
@@ -110,11 +140,33 @@ static void scaler_f09b(agc_state_t *state) {
 
 static void scaler_f10a(agc_state_t *state) {
     counter_request(state, COUNTER_TIME5, COUNT_UP);
+
+    if (state->only_tc || state->no_tc) {
+        control_gojam(state);
+        state->chan77 |= 04;
+    }
 }
 
 static void scaler_f10b(agc_state_t *state) {
     counter_request(state, COUNTER_TIME1, COUNT_UP);
     counter_request(state, COUNTER_TIME3, COUNT_UP);
+
+    state->only_tc = 1;
+    state->no_tc = 1;
+}
+
+static void scaler_f12b(agc_state_t *state) {
+    if ((state->scaler & (FS14 | FS13)) == FS13) {
+        if (state->only_rupt || state->no_rupt) {
+            control_gojam(state);
+            state->chan77 |= 010;
+        }
+    }
+}
+
+static void scaler_f14b(agc_state_t *state) {
+    state->only_rupt = state->iip;
+    state->no_rupt = !state->iip;
 }
 
 static void scaler_f16b(agc_state_t *state) {
@@ -137,4 +189,15 @@ static void scaler_f17a(agc_state_t *state) {
     }
     state->dsky.key_rel = 0;
     state->dsky.oper_err = 0;
+
+    if (state->night_watchman) {
+        control_gojam(state);
+        state->chan77_watchman = 020;
+    } else {
+        state->chan77_watchman = 0;
+    }
+}
+
+static void scaler_f17b(agc_state_t *state) {
+    state->night_watchman = 1;
 }

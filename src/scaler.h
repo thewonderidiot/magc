@@ -20,6 +20,9 @@
 #define FS09 00100
 #define FS10 00200
 #define FS11 00400
+#define FS12 01000
+#define FS13 02000
+#define FS14 04000
 
 //---------------------------------------------------------------------------//
 //                        Global Function Prototypes                         //
