@@ -23,6 +23,10 @@ void counter_service(agc_state_t *state) {
     case COUNTER_TIME5:
         exec_PINC(state, addr);
         break;
+
+    case COUNTER_TIME6:
+        exec_DINC(state, addr);
+        break;
     }
 
     state->counters[counter] = 0;

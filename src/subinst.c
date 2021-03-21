@@ -74,6 +74,35 @@ void exec_PINC(agc_state_t *state, uint16_t rsct) {
     mem_write(state, state->g);
 }
 
+void exec_DINC(agc_state_t *state, uint16_t rsct) {
+    // 1. RSCT WS
+    state->s = rsct;
+    // 2. RSC WG (no effect)
+    // STBE/STBF
+    state->g = mem_read(state);
+    // 5. RG WY TSGN TMZ TPZG
+    // 6. 00 MONEX POUT
+    // 6. 10 PONEX MOUT
+    // 6. X1 ZOUT
+    uint16_t x = 0;
+    if (state->g == 0 || state->g == 0177777) {
+        control_zout(state);
+    } else if (state->g & 0100000) {
+        x = 1;
+        control_mout(state);
+    } else {
+        x = 0177776;
+        control_pout(state);
+    }
+    uint16_t u = control_add(x, state->g, 0);
+    // 7. RU WSC WG WOVR
+    state->g = u;
+    // 8. RB WS
+    state->s = state->b & 07777;
+    // ZID
+    mem_write(state, state->g);
+}
+
 //---------------------------------------------------------------------------//
 //                        Local Function Definitions                         //
 //---------------------------------------------------------------------------//

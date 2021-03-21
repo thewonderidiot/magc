@@ -7,6 +7,7 @@
 //---------------------------------------------------------------------------//
 //                         Local Function Prototypes                         //
 //---------------------------------------------------------------------------//
+static void scaler_f06b(agc_state_t *state);
 static void scaler_f09a(agc_state_t *state);
 static void scaler_f09b(agc_state_t *state);
 static void scaler_f10a(agc_state_t *state);
@@ -37,6 +38,9 @@ void scaler_advance(agc_state_t *state) {
 
     // B pulses
     switch (scaler_stage) {
+    case 6:
+        scaler_f06b(state);
+        break;
     case 9:
         scaler_f09b(state);
         break;
@@ -80,6 +84,12 @@ void scaler_advance(agc_state_t *state) {
 //---------------------------------------------------------------------------//
 //                        Local Function Definitions                         //
 //---------------------------------------------------------------------------//
+static void scaler_f06b(agc_state_t *state) {
+    if (state->chan13 & 040000) {
+        counter_request(state, COUNTER_TIME6, COUNT_DOWN);
+    }
+}
+
 static void scaler_f09a(agc_state_t *state) {
     if (state->chan15 && !state->kyrpt1_set) {
         state->kyrpt1_pending = 1;

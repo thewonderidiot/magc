@@ -199,6 +199,23 @@ void control_wovr(agc_state_t *state, uint16_t wl) {
     }
 }
 
+void control_pout(agc_state_t *state) {
+    (void)state;
+}
+
+void control_mout(agc_state_t *state) {
+    (void)state;
+}
+
+void control_zout(agc_state_t *state) {
+    switch (state->s - COUNTER_BASE_ADDR) {
+    case COUNTER_TIME6:
+        state->pending_rupts |= (1 << RUPT_T6RUPT);
+        state->chan13 &= ~040000;
+        break;
+    }
+}
+
 uint16_t control_rch(agc_state_t *state) {
     uint16_t chan = state->s & 077;
     uint16_t chwl;

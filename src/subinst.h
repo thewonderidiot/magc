@@ -78,5 +78,6 @@ typedef enum {
 //---------------------------------------------------------------------------//
 void subinst_exec(agc_state_t *state);
 void exec_PINC(agc_state_t *state, uint16_t rsct);
+void exec_DINC(agc_state_t *state, uint16_t rsct);
 
 #endif//_SUBINST_H_

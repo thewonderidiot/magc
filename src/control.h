@@ -18,6 +18,9 @@ uint16_t control_rch(agc_state_t *state);
 void control_wch(agc_state_t *state, uint16_t wl);
 void control_zip(agc_state_t *state);
 void control_zap(agc_state_t *state);
+void control_pout(agc_state_t *state);
+void control_mout(agc_state_t *state);
+void control_zout(agc_state_t *state);
 void control_wovr(agc_state_t *state, uint16_t wl);
 
 #endif//_CONTROL_H_
