@@ -13,6 +13,12 @@ typedef struct {
     uint16_t out0;
     uint8_t vnflash;
     uint8_t restart;
+    uint8_t oper_err;
+    uint8_t key_rel;
+    uint8_t temp;
+    uint8_t upl_act;
+    uint8_t comp_act;
+    uint8_t stby;
 } dsky_t;
 
 typedef struct {
@@ -58,21 +64,25 @@ typedef struct {
 
     uint16_t mwl;
 
-    uint8_t chan5;
-    uint8_t chan6;
+    uint8_t  chan5;
+    uint8_t  chan6;
     uint16_t chan11;
     uint16_t chan12;
     uint16_t chan13;
     uint16_t chan14;
-    uint8_t chan15;
-    uint8_t chan16;
+    uint8_t  chan15;
+    uint8_t  chan16;
     uint16_t chan30;
     uint16_t chan31;
     uint16_t chan32;
     uint16_t chan33;
 
+    uint8_t stby;
+    uint8_t restart;
+    uint8_t altest;
     uint8_t kyrpt1_pending;
     uint8_t kyrpt1_set;
+    uint8_t flash;
 
     dsky_t dsky;
 } agc_state_t;

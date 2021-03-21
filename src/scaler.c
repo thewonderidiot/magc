@@ -11,6 +11,8 @@ static void scaler_f09a(agc_state_t *state);
 static void scaler_f09b(agc_state_t *state);
 static void scaler_f10a(agc_state_t *state);
 static void scaler_f10b(agc_state_t *state);
+static void scaler_f16b(agc_state_t *state);
+static void scaler_f17a(agc_state_t *state);
 
 //---------------------------------------------------------------------------//
 //                        Global Function Definitions                        //
@@ -41,11 +43,23 @@ void scaler_advance(agc_state_t *state) {
     case 10:
         scaler_f10b(state);
         break;
+    case 16:
+        scaler_f16b(state);
+        break;
     }
 
     // A pulses
     switch (scaler_stage - 1) {
     default:
+    case 17:
+        scaler_f17a(state);
+        // fallthrough
+    case 16:
+    case 15:
+    case 14:
+    case 13:
+    case 12:
+    case 11:
     case 10:
         scaler_f10a(state);
         // fallthrough
@@ -91,4 +105,26 @@ static void scaler_f10a(agc_state_t *state) {
 static void scaler_f10b(agc_state_t *state) {
     counter_request(state, COUNTER_TIME1, COUNT_UP);
     counter_request(state, COUNTER_TIME3, COUNT_UP);
+}
+
+static void scaler_f16b(agc_state_t *state) {
+    // Turn off flash (lights go on)
+    state->flash = 0;
+    state->dsky.vnflash = 0;
+    if (state->chan11 & 0100) {
+        state->dsky.oper_err = 1;
+    }
+    if (state->chan11 & 020) {
+        state->dsky.key_rel = 1;
+    }
+}
+
+static void scaler_f17a(agc_state_t *state) {
+    // Turn on flash (lights go off)
+    state->flash = 1;
+    if (state->chan11 & 040) {
+        state->dsky.vnflash = 1;
+    }
+    state->dsky.key_rel = 0;
+    state->dsky.oper_err = 0;
 }

@@ -20,6 +20,8 @@ void control_gojam(agc_state_t *state) {
     state->inhint = 0;
     state->gnhnc = 1;
     state->inkl = 0;
+    state->restart = 1;
+    state->dsky.restart = 1;
 }
 
 uint16_t control_add(uint16_t x, uint16_t y, uint16_t ci) {
@@ -218,8 +220,22 @@ uint16_t control_rch(agc_state_t *state) {
     case 010:
         chwl = state->dsky.out0;
         break;
+    case 011:
+        chwl = state->chan11;
+        break;
+    case 012:
+        chwl = state->chan12;
+        break;
+    case 013:
+        chwl = state->chan13;
+        break;
+    case 014:
+        chwl = state->chan14;
+        break;
     case 015:
         return state->chan15;
+    case 016:
+        return state->chan16;
     case 030:
     case 031:
     case 032:
@@ -253,6 +269,33 @@ void control_wch(agc_state_t *state, uint16_t wl) {
         break;
     case 010:
         state->dsky.out0 = chwl;
+        break;
+    case 011:
+        state->chan11 = chwl;
+        state->dsky.oper_err = (!state->flash && (chwl & 0100));
+        state->dsky.vnflash =  (state->flash && (chwl & 040));
+        state->dsky.key_rel =  (!state->flash && (chwl & 020));
+        state->dsky.temp = (chwl & 010) != 0;
+        state->dsky.upl_act = (chwl & 04) != 0;
+        state->dsky.comp_act = (chwl & 02) != 0;
+        if (chwl & 01000) {
+            state->restart = 0;
+            if (!state->altest) {
+                state->dsky.restart = 0;
+            }
+        }
+        break;
+    case 012:
+        state->chan12 = chwl;
+        break;
+    case 013:
+        state->chan13 = chwl;
+        state->altest = (chwl & 01000) != 0;
+        state->dsky.restart = state->restart || state->altest;
+        state->dsky.stby = state->stby || state->altest;
+        break;
+    case 014:
+        state->chan14 = chwl;
         break;
     }
 }

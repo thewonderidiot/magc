@@ -5,7 +5,6 @@
 #include <time.h>
 #include <stdio.h>
 #include <signal.h>
-#include <pthread.h>
 #include <unistd.h>
 #include <errno.h>
 #include <stdbool.h>
@@ -23,8 +22,6 @@
 #define AGC_WAKEUP_PERIOD_NS 18000000
 #define DSKY_PORT 19681
 
-uint16_t g_last_out0 = 0;
-
 //---------------------------------------------------------------------------//
 //                         Local Function Prototypes                         //
 //---------------------------------------------------------------------------//
@@ -32,7 +29,7 @@ static void agc_execute(uint16_t cycles);
 static void dsky_service(void);
 static int initialize_timer(timer_t *timer);
 static int initialize_socket(int *sockfd);
-static void sigint_handler(int sig);
+static void void_handler(int sig);
 
 //---------------------------------------------------------------------------//
 //                                Local Data                                 //
@@ -40,6 +37,7 @@ static void sigint_handler(int sig);
 static agc_state_t agc_state;
 static int dsky_sock;
 static int dsky_fd = -1;
+static dsky_t dsky_state;
 
 //---------------------------------------------------------------------------//
 //                        Global Function Definitions                        //
@@ -76,9 +74,9 @@ int main(int argc, char **argv) {
     sigemptyset(&sigset);
     sigaddset(&sigset, SIGINT);
     sigaddset(&sigset, SIGUSR1);
-    signal(SIGINT, sigint_handler);
-    signal(SIGUSR1, sigint_handler);
-    signal(SIGPIPE, sigint_handler);
+    signal(SIGINT, void_handler);
+    signal(SIGUSR1, void_handler);
+    signal(SIGPIPE, SIG_IGN);
 
     int sig;
     for (;;) {
@@ -131,9 +129,9 @@ static void dsky_service(void) {
         return;
     }
 
-    if (agc_state.dsky.out0 && (agc_state.dsky.out0 != g_last_out0)) {
-        g_last_out0 = agc_state.dsky.out0;
-        status = write(dsky_fd, &agc_state.dsky, sizeof(agc_state.dsky));
+    if (memcmp(&dsky_state, &agc_state.dsky, sizeof(dsky_state)) != 0) {
+        memcpy(&dsky_state, &agc_state.dsky, sizeof(dsky_state));
+        status = write(dsky_fd, &dsky_state, sizeof(dsky_state));
         if (status != sizeof(agc_state.dsky)) {
             close(dsky_fd);
             dsky_fd = -1;
@@ -144,16 +142,15 @@ static void dsky_service(void) {
     status = read(dsky_fd, &key, sizeof(key));
     if (status > 0) {
         dsky_set_chan15(&agc_state, key);
-    }
+        if (key == 022) {
+            agc_state.restart = 0;
+            if (!agc_state.altest) {
+                agc_state.dsky.restart = 0;
+            }
+        }       
+    }       
 }
 static int initialize_timer(timer_t *timer) {
-    pthread_attr_t attr;
-    pthread_attr_init(&attr);
-
-    struct sched_param parm;
-    parm.sched_priority = 255;
-    pthread_attr_setschedparam(&attr, &parm);
-
     struct sigevent sigev;
     sigev.sigev_notify = SIGEV_SIGNAL;
     sigev.sigev_signo = SIGUSR1;
@@ -211,7 +208,7 @@ static int initialize_socket(int *sockfd) {
     return 0;
 }
 
-static void sigint_handler(int sig) {
+static void void_handler(int sig) {
     (void)sig;
 }
 
