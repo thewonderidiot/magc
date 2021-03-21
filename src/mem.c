@@ -25,7 +25,7 @@ uint16_t mem_read(agc_state_t *state) {
         state->writeback = addr;
     } else {
         if (state->s < 04000) {
-            if (state->feb & 0100000) {
+            if ((state->fb >= 060000) && (state->feb & 0100000)) {
                 addr = state->feb | (state->fb & 016000);
             } else {
                 addr = state->fb;

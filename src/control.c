@@ -182,17 +182,17 @@ void control_zap(agc_state_t *state) {
 
 void control_wovr(agc_state_t *state, uint16_t wl) {
     if ((wl & 0140000) == 0040000) {
-        switch (state->s) {
-        case 025:
+        switch (state->s - COUNTER_BASE_ADDR) {
+        case COUNTER_TIME1:
             counter_request(state, COUNTER_TIME2, COUNT_UP);
             break;
-        case 026:
+        case COUNTER_TIME3:
             state->pending_rupts |= (1 << RUPT_T3RUPT);
             break;
-        case 027:
+        case COUNTER_TIME4:
             state->pending_rupts |= (1 << RUPT_T4RUPT);
             break;
-        case 030:
+        case COUNTER_TIME5:
             state->pending_rupts |= (1 << RUPT_T5RUPT);
             break;
         }
@@ -290,8 +290,8 @@ void control_wch(agc_state_t *state, uint16_t wl) {
     case 011:
         state->chan11 = chwl;
         state->dsky.oper_err = (!state->flash && (chwl & 0100));
-        state->dsky.vnflash =  (state->flash && (chwl & 040));
-        state->dsky.key_rel =  (!state->flash && (chwl & 020));
+        state->dsky.vnflash = (state->flash && (chwl & 040));
+        state->dsky.key_rel = (!state->flash && (chwl & 020));
         state->dsky.temp = (chwl & 010) != 0;
         state->dsky.upl_act = (chwl & 04) != 0;
         state->dsky.comp_act = (chwl & 02) != 0;

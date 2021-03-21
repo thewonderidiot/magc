@@ -20,7 +20,7 @@ magc: $(OBJECTS)
 build:
 	mkdir -p build
 
-build/%.o: src/%.c build
+build/%.o: src/%.c | build
 	$(CC) $(CFLAGS) -c -o $@ $<
 
 -include $(DEPENDS)

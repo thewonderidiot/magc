@@ -240,7 +240,6 @@ class DSKY(QMainWindow):
         return b
 
     def _send_key(self, k):
-        print(k)
         self._socket.write(QByteArray(struct.pack('<B', k)))
 
     def paintEvent(self, event):
