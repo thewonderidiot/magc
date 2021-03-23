@@ -1020,6 +1020,10 @@ static void exec_BZF0(agc_state_t *state) {
         state->b = control_rad(state);
         state->s = state->b & 07777;
         state->nisql = 1;
+        // Transient on TCF0 if not to EXTEND
+        if (!state->futext) {
+            state->no_tc = 0;
+        }
     } else {
         // 8. X0 RZ WS ST2
         state->s = state->z & 07777;
@@ -1298,6 +1302,10 @@ static void exec_BZMF0(agc_state_t *state) {
         state->b = control_rad(state);
         state->s = state->b & 07777;
         state->nisql = 1;
+        // Transient on TCF0 if to RELINT or INHINT
+        if (state->pseudo && !state->futext) {
+            state->no_tc = 0;
+        }
     } else {
         // 8. 00 RZ WS ST2
         state->s = state->z & 07777;
