@@ -11,18 +11,23 @@ class Lamp(QWidget):
         self._h = h
         self._on = on
         self._setup_ui()
+        self.value = b'0'
         self._flash = False
 
     def set_on(self, on):
         if on != self._on:
             self._on = on
-            self.update()
+            self.update_display()
 
     def set_flash(self, flash):
         if flash != self._flash:
             self._flash = flash
             if self._on:
-                self.update()
+                self.update_display()
+
+    def update_display(self):
+        self.value = b'1' if (self._on and not self._flash) else b'0'
+        self.update()
 
     def _setup_ui(self):
         self.setFixedSize(self._w, self._h)

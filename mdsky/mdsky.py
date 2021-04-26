@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 import sys
 import struct
+import serial
 from PySide2.QtWidgets import QApplication, QMainWindow, QStyleOption, QStyle, QPushButton
 from PySide2.QtGui import QPainter, QPixmap
 from PySide2.QtCore import Qt, QTimer, QByteArray
@@ -22,6 +23,17 @@ class DSKY(QMainWindow):
         super().__init__(parent)
         self.setWindowTitle('mDSKY')
 
+        try:
+            self._el_serial = serial.Serial('/dev/dsky_el', 57600)
+            self._el_serial.write(b'R\nR\n')
+        except:
+            self._el_serial = None
+
+        try:
+            self._il_serial = serial.Serial('/dev/dsky_il', 57600)
+        except:
+            self._il_serial = None
+
         self._setup_ui()
 
         self._packet = [0, 0, 0, 0]
@@ -31,6 +43,12 @@ class DSKY(QMainWindow):
         self._socket.readyRead.connect(self._read_data)
         self._socket.disconnected.connect(self._connect_to_magc)
         self._connect_to_magc()
+
+        self._last_el_cmd = b''
+        self._last_il_cmd = b''
+        self._timer = QTimer()
+        self._timer.timeout.connect(self._update_display)
+        self._timer.start(10)
 
     def _connect_to_magc(self):
         self._socket.connectToHost('localhost', 19681)
@@ -181,6 +199,11 @@ class DSKY(QMainWindow):
         self._vel = Lamp(self, lamp_pix, 79, 228, 78, 37, False)
         self._vel.move(134, 292)
 
+        self._il_lamps = [self._upl_act, self._no_att, self._stby, self._key_rel,
+                          self._opr_err, self._prio_disp, self._no_dap,
+                          self._temp, self._gimbal_lock, self._prog_alarm, self._restart,
+                          self._tracker, self._alt, self._vel]
+
         self.show()
 
     def _create_reg(self, el_pix, col, row):
@@ -235,12 +258,44 @@ class DSKY(QMainWindow):
         b.setStyleSheet('QPushButton{background-color: rgba(0,0,0,0);}')
         b.setFocusPolicy(Qt.FocusPolicy.NoFocus)
         b.setAutoRepeat(False)
-        b.pressed.connect(lambda: self._send_key(keycode))
-        b.released.connect(lambda: self._send_key(0))
+        if keycode == 0b100000:
+            key_on = keycode | 0b1
+            key_off = keycode
+        else:
+            key_on = keycode
+            key_off = 0
+        b.pressed.connect(lambda: self._send_key(key_on))
+        b.released.connect(lambda: self._send_key(key_off))
         return b
 
     def _send_key(self, k):
         self._socket.write(QByteArray(struct.pack('<B', k)))
+
+    def _update_display(self): 
+        reg1 = b''.join([ss.value for ss in self._reg1])
+        reg2 = b''.join([ss.value for ss in self._reg2])
+        reg3 = b''.join([ss.value for ss in self._reg3])
+        verb = b''.join([ss.value for ss in self._verb])
+        noun = b''.join([ss.value for ss in self._noun])
+        prog = b''.join([ss.value for ss in self._prog])
+        el_cmd = b'DA%s%s%s%s%s%s%s%s%s%s\n' % (self._sign1.value, reg1, self._sign2.value, reg2, self._sign3.value, reg3, verb, noun, self._com_act.value, prog)
+        if el_cmd != self._last_el_cmd:
+            if self._el_serial is not None:
+                self._el_serial.write(el_cmd)
+                self._el_serial.readline()
+            self._last_el_cmd = el_cmd
+
+        il_values = 0
+        for i in range(len(self._il_lamps)):
+            if self._il_lamps[i].value == b'1':
+                il_values |= 1 << i
+
+        il_cmd = b'M%04X\n' % il_values
+        if il_cmd != self._last_il_cmd:
+            if self._il_serial is not None:
+                self._il_serial.write(il_cmd)
+                self._il_serial.readline()
+            self._last_il_cmd = il_cmd
 
     def paintEvent(self, event):
         opt = QStyleOption()

@@ -14,6 +14,7 @@ class SevenSegment(QWidget):
         self._on = True
 
         self._el_pix = el_pix
+        self.value = b' '
 
         self._setup_ui()
 
@@ -28,12 +29,39 @@ class SevenSegment(QWidget):
             self._bit3 = (bits >> 2) & 0x1
             self._bit4 = (bits >> 3) & 0x1
             self._bit5 = (bits >> 4) & 0x1
-            self.update()
+            self.update_display()
 
     def set_on(self, on):
         if on != self._on:
             self._on = on
-            self.update()
+            self.update_display()
+
+    def update_display(self):
+        self.update()
+        if not self._on:
+            self.value =  b' '
+        elif self._bits == 0b10101:
+            self.value =  b'0'
+        elif self._bits == 0b00011:
+            self.value =  b'1'
+        elif self._bits == 0b11001:
+            self.value =  b'2'
+        elif self._bits == 0b11011:
+            self.value =  b'3'
+        elif self._bits == 0b01111:
+            self.value =  b'4'
+        elif self._bits == 0b11110:
+            self.value =  b'5'
+        elif self._bits == 0b11100:
+            self.value =  b'6'
+        elif self._bits == 0b10011:
+            self.value =  b'7'
+        elif self._bits == 0b11101:
+            self.value =  b'8'
+        elif self._bits == 0b11111:
+            self.value =  b'9'
+        else:
+            self.value =  b' '
 
     def paintEvent(self, event):
         if self._on:

@@ -9,6 +9,8 @@ class Sign(QWidget):
 
         self._el_pix = el_pix
 
+        self.value = b' '
+
         self._setup_ui()
 
     def _setup_ui(self):
@@ -17,12 +19,22 @@ class Sign(QWidget):
     def set_minus_bit(self, bit):
         if self._minus != bit:
             self._minus = bit
-            self.update()
+            self.update_display()
 
     def set_plus_bit(self, bit):
         if self._plus != bit:
             self._plus = bit
-            self.update()
+            self.update_display()
+
+    def update_display(self):
+        if self._plus:
+            self.value = b'+'
+        elif self._minus:
+            self.value = b'-'
+        else:
+            self.value = b' '
+
+        self.update()
 
     def paintEvent(self, event):
         p = QPainter(self)
