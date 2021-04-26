@@ -124,6 +124,14 @@ static void scaler_f09a(agc_state_t *state) {
     if (state->chan15 && !state->kyrpt1_set) {
         state->kyrpt1_pending = 1;
     }
+
+    if ((state->chan16 & 037) && !state->kyrpt2_set) {
+        state->kyrpt2_pending = 1;
+    }
+
+    if ((state->chan16 & 0140) && !state->mkrpt_set) {
+        state->mkrpt_pending = 1;
+    }
 }
 
 static void scaler_f09b(agc_state_t *state) {
@@ -135,6 +143,18 @@ static void scaler_f09b(agc_state_t *state) {
         state->pending_rupts |= (1 << RUPT_KEYRUPT1);
         state->kyrpt1_set = 1;
         state->kyrpt1_pending = 0;
+    }
+
+    if (state->kyrpt2_pending) {
+        state->pending_rupts |= (1 << RUPT_KEYRUPT2);
+        state->kyrpt2_set = 1;
+        state->kyrpt2_pending = 0;
+    }
+
+    if (state->mkrpt_pending) {
+        state->pending_rupts |= (1 << RUPT_KEYRUPT2);
+        state->mkrpt_set = 1;
+        state->mkrpt_pending = 0;
     }
 }
 
@@ -196,8 +216,17 @@ static void scaler_f17a(agc_state_t *state) {
     } else {
         state->chan77_watchman = 0;
     }
+
+    if ((state->sbybut == SBYBUT_RELEASED) && !(state->chan32 & 020000)) {
+        state->sbybut = SBYBUT_PRESSED;
+    }
 }
 
 static void scaler_f17b(agc_state_t *state) {
     state->night_watchman = 1;
+
+    if ((state->sbybut == SBYBUT_PRESSED) && (state->chan13 & 02000)) {
+        state->sbybut = SBYBUT_TRIGGERED;
+        // FIXME: HANDLE STANDBY
+    }
 }

@@ -258,10 +258,17 @@ uint16_t control_rch(agc_state_t *state) {
     case 016:
         return state->chan16;
     case 030:
+        chwl = state->chan30;
+        break;
     case 031:
+        chwl = state->chan31;
+        break;
     case 032:
+        chwl = state->chan32;
+        break;
     case 033:
-        return 0177777;
+        chwl = state->chan33;
+        break;
     case 077:
         return state->chan77_watchman | state->chan77;
     default:

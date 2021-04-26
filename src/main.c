@@ -13,7 +13,6 @@
 #include <netinet/in.h>
 
 #include "agc.h"
-#include "dsky.h"
 
 //---------------------------------------------------------------------------//
 //                                  Defines                                  //
@@ -141,14 +140,24 @@ static void dsky_service(void) {
 
     status = read(dsky_fd, &key, sizeof(key));
     if (status > 0) {
-        dsky_set_chan15(&agc_state, key);
-        if (key == 022) {
-            agc_state.restart = 0;
-            if (!agc_state.altest) {
-                agc_state.dsky.restart = 0;
+        if (key & 040) {
+            uint16_t chan32 = agc_state.chan32;
+            if (key & 01) {
+                chan32 &= ~020000;
+            } else {
+                chan32 |= 020000;
             }
-        }       
-    }       
+            agc_set_chan32(&agc_state, chan32);
+        } else {
+            agc_set_chan15(&agc_state, key);
+            if (key == 022) {
+                agc_state.restart = 0;
+                if (!agc_state.altest) { // FIXME: Holding should keep RESTART off
+                    agc_state.dsky.restart = 0;
+                }
+            }
+        }
+    }
 }
 static int initialize_timer(timer_t *timer) {
     struct sigevent sigev;
@@ -185,10 +194,10 @@ static int initialize_socket(int *sockfd) {
     setsockopt(*sockfd, SOL_SOCKET, SO_REUSEADDR, (const char *)&sock_on, sizeof(sock_on));
 
     struct sockaddr_in servaddr;
-    bzero(&servaddr, sizeof(servaddr)); 
-    servaddr.sin_family = AF_INET; 
-    servaddr.sin_addr.s_addr = htonl(INADDR_ANY); 
-    servaddr.sin_port = htons(DSKY_PORT); 
+    bzero(&servaddr, sizeof(servaddr));
+    servaddr.sin_family = AF_INET;
+    servaddr.sin_addr.s_addr = htonl(INADDR_ANY);
+    servaddr.sin_port = htons(DSKY_PORT);
 
     int status = bind(*sockfd, (struct sockaddr*)&servaddr, sizeof(servaddr));
     if (status != 0) {

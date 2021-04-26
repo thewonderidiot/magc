@@ -9,7 +9,6 @@ SOURCES = main \
 	  control \
 	  mem \
 	  utils \
-	  dsky \
 
 OBJECTS = $(addprefix build/,$(addsuffix .o,$(SOURCES)))
 DEPENDS = $(patsubst %.o,%.d,$(OBJECTS))

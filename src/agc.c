@@ -15,6 +15,10 @@
 //---------------------------------------------------------------------------//
 void agc_init(agc_state_t *state) {
     control_gojam(state);
+    state->chan30 = 077777;
+    state->chan31 = 037777;
+    state->chan32 = 077777;
+    state->chan33 = 077777;
 }
 
 void agc_service(agc_state_t *state) {
@@ -85,4 +89,32 @@ int agc_load_rope(agc_state_t *state, char *rope_file) {
     }
 
     return 0;
+}
+
+void agc_set_chan15(agc_state_t *state, uint8_t keycode) {
+    state->chan15 = keycode & 037;
+    if (!state->chan15) {
+        state->kyrpt1_pending = 0;
+        state->kyrpt1_set = 0;
+    }
+}
+
+void agc_set_chan16(agc_state_t *state, uint8_t keycode) {
+    state->chan15 = keycode & 0177;
+    if (!(keycode & 037)) {
+        state->kyrpt2_pending = 0;
+        state->kyrpt2_set = 0;
+    }
+
+    if (!(keycode & 0140)) {
+        state->mkrpt_pending = 0;
+        state->mkrpt_set = 0;
+    }
+}
+
+void agc_set_chan32(agc_state_t *state, uint16_t value) {
+    state->chan32 = value & 077777;
+    if (value & 020000) {
+        state->sbybut = SBYBUT_RELEASED;
+    }
 }

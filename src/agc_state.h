@@ -21,6 +21,12 @@ typedef struct {
     uint8_t stby;
 } dsky_t;
 
+typedef enum {
+    SBYBUT_RELEASED = 0,
+    SBYBUT_PRESSED,
+    SBYBUT_TRIGGERED,
+} sbybut_t;
+
 typedef struct {
     uint16_t a;
     uint16_t l;
@@ -85,6 +91,10 @@ typedef struct {
     uint8_t flash;
     uint8_t kyrpt1_pending;
     uint8_t kyrpt1_set;
+    uint8_t kyrpt2_pending;
+    uint8_t kyrpt2_set;
+    uint8_t mkrpt_pending;
+    uint8_t mkrpt_set;
 
     uint8_t pale;
     uint8_t no_tc;
@@ -93,6 +103,8 @@ typedef struct {
     uint8_t only_rupt;
     uint8_t night_watchman;
     uint8_t only_counts;
+
+    sbybut_t sbybut;
 
     dsky_t dsky;
 } agc_state_t;
