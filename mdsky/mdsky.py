@@ -2,10 +2,10 @@
 import sys
 import struct
 import serial
-from PySide2.QtWidgets import QApplication, QMainWindow, QStyleOption, QStyle, QPushButton
-from PySide2.QtGui import QPainter, QPixmap
-from PySide2.QtCore import Qt, QTimer, QByteArray
-from PySide2.QtNetwork import QTcpSocket
+from qtpy.QtWidgets import QApplication, QMainWindow, QStyleOption, QStyle, QPushButton
+from qtpy.QtGui import QPainter, QPixmap
+from qtpy.QtCore import Qt, QTimer, QByteArray
+from qtpy.QtNetwork import QTcpSocket
 
 import resources
 from lamp import Lamp
@@ -255,7 +255,7 @@ class DSKY(QMainWindow):
         b = Button(self)
         b.setFixedSize(63, 63)
         b.move(x, y)
-        b.setStyleSheet('QPushButton{background-color: rgba(0,0,0,0);}')
+        b.setStyleSheet('QPushButton{background-color:rgba(0,0,0,0);border:0px;} QPushButton:pressed{background-color:rgba(0,0,0,60);}')
         b.setFocusPolicy(Qt.FocusPolicy.NoFocus)
         b.setAutoRepeat(False)
         if keycode == 0b100000:
@@ -299,7 +299,6 @@ class DSKY(QMainWindow):
 
     def paintEvent(self, event):
         opt = QStyleOption()
-        opt.init(self)
         p = QPainter(self)
         self.style().drawPrimitive(QStyle.PE_Widget, opt, p, self)
 
