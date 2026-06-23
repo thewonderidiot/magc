@@ -159,6 +159,7 @@ static void dsky_service(void) {
         }
     }
 }
+
 static int initialize_timer(timer_t *timer) {
     struct sigevent sigev;
     sigev.sigev_notify = SIGEV_SIGNAL;

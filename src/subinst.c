@@ -20,15 +20,26 @@ static void exec_DV1376(agc_state_t *state, uint8_t stage);
 //                        Global Function Definitions                        //
 //---------------------------------------------------------------------------//
 void subinst_exec(agc_state_t *state) {
+    // Construct the main opcode from the SQ resgister and the extend bit.
     uint16_t op = (state->sqext << 3) | state->sq;
+
+    // Begin subinstruction ID construction. The current stage takes highest
+    // priority; stage 2 will cause subinstruction STD2 to be selected regardless
+    // of any other state.
     uint16_t subinst_id = state->st;
+
     if (subinst_id != 2) {
+        // Not STD2. Everything else needs at least the main opcode.
         subinst_id |= (op << 6);
 
+        // Certain opcodes are further subdivided into "quarter-codes", and opcode
+        // 10 (channel I/O instructions) is further subdivided by bit 10.
         switch (op) {
         case 001:
         case 011:
         case 016:
+            // For opcodes 01, 11, and 16, quartercodes 1-3 all select the same
+            // instruction. Group these all into a single ID.
             subinst_id |= (state->qc > 0) << 4;
             break;
 
@@ -44,6 +55,8 @@ void subinst_exec(agc_state_t *state) {
         }
     }
 
+    // Now that we've uniquely selected a subinstruction, call the dedicated
+    // function implementing it.
     switch (subinst_id) {
 #define X(_n, ...) \
     case SUBINST_##_n: \
@@ -55,6 +68,7 @@ void subinst_exec(agc_state_t *state) {
         printf("UNKNOWN INSTRUCTION\n");
     }
 
+    // If we just executed TC0 or TCF0, reset the TC trap alarm.
     if ((subinst_id != SUBINST_TC0) && (subinst_id != SUBINST_TCF0)) {
         state->only_tc = 0;
     }

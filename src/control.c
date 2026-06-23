@@ -29,12 +29,20 @@ void control_gojam(agc_state_t *state) {
 }
 
 uint16_t control_add(uint16_t x, uint16_t y, uint16_t ci) {
+    // One's complement addition with optional forced carry-in.
+    // Perform a 32-bit addition of X and Y to account for possible
+    // overflow. On overflow, perform end-around carry.
     uint32_t u = (uint32_t)x + (uint32_t)y;
     u += ((u >> 16) & 1) | ci;
     return (u & 0177777);
 }
 
 uint16_t control_rad(agc_state_t *state) {
+    // RAD determines if the next instruction is a pseudo-instruciton
+    // (RELINT, INHINT, or EXTEND). If so, it executes as RZ ST2, sets
+    // the PSEUDO bit which is used by the priority logic, and sets
+    // or clears the appropriate state flip-flop. Otherwise, it
+    // clears the PSEUDO bit and executes as RG.
     switch (state->g) {
     case 000003:
         state->inhint = 0;
@@ -58,6 +66,7 @@ uint16_t control_rad(agc_state_t *state) {
 }
 
 uint16_t control_rsc(agc_state_t *state) {
+    // RSC reads the currently selected special/central register.
     switch (state->s) {
     case 0: 
         return state->a;
